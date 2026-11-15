@@ -82,7 +82,7 @@ git config --list
 Ejecuta el instalador oficial (asegúrate de incluir la ruta completa `/install`):
 
 ```bash
-curl -fsSL https://opencode.ai | bash
+curl -fsSL https://opencode.ai/install | bash
 ```
 
 *(El script instala el binario en `~/.opencode/bin` y actualiza automáticamente `~/.bashrc` o `~/.zshrc`).*
