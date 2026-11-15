@@ -1,32 +1,32 @@
-# Guía de Aprovisionamiento: Entorno Native AI-SDLC con OpenCode
+# Guía de Aprovisionamiento y Arranque: Ecosistema Native AI-SDLC
 
-Esta guía estandariza la preparación desde cero de un entorno de desarrollo agéntico basado en **Ubuntu** (ya sea sobre **WSL 2 en Windows** o directamente en un **Servidor Virtual / VPS** en la nube).
+Esta guía estandariza el aprovisionamiento desde cero de un entorno de desarrollo agéntico basado en **Ubuntu** (ya sea sobre **WSL 2 en Windows** o directamente en un **Servidor Virtual / VPS** en la nube) y define una estructura base agnóstica para iniciar cualquier proyecto de software.
 
 ---
 
-## Parte 1: Preparación del Sistema Operativo (Solo si usas Windows)
+## Parte 1: Preparación del Entorno en Windows (Solo si usas WSL 2)
 
-Si vas a desplegar directamente en un servidor virtual con Ubuntu, **salta a la Parte 2**. Si estás en una estación de trabajo con Windows 10/11, configura WSL 2 antes de continuar.
+Si vas a desplegar directamente en un servidor virtual con Ubuntu limpio, **salta a la Parte 2**.
 
-### 1.1 Instalar o actualizar WSL con la última versión de Ubuntu
+### 1.1 Instalar o actualizar WSL con Ubuntu
 Abre **PowerShell como Administrador** y ejecuta:
 
 ```powershell
-# Instalar WSL con Ubuntu (si es un equipo nuevo)
+# Instalar WSL con Ubuntu (en equipos nuevos)
 wsl --install -d Ubuntu
 
 # O actualizar el kernel de WSL a su última versión (si ya estaba instalado)
 wsl --update
 ```
 
-### 1.2 Optimizar recursos de memoria y red en WSL
-Para evitar que WSL consuma toda la memoria RAM del equipo anfitrión y facilitar la comunicación de red local:
+### 1.2 Optimizar memoria RAM y red en WSL
+Para evitar que WSL consuma toda la memoria del equipo anfitrión y facilitar la comunicación de red local:
 
 1. Abre el archivo de configuración global desde PowerShell:
    ```powershell
    notepad "\$env:USERPROFILE\.wslconfig"
    ```
-2. Agrega la siguiente configuración (ajusta `memory` según la capacidad del equipo, ej. `8GB` para equipos de 16 GB):
+2. Agrega la siguiente configuración (ajusta `memory` según la RAM total del equipo, ej. `8GB` en equipos de 16 GB):
    ```ini
    [wsl2]
    memory=8GB
@@ -41,35 +41,36 @@ Para evitar que WSL consuma toda la memoria RAM del equipo anfitrión y facilita
 
 ## Parte 2: Aprovisionamiento Base en Ubuntu (WSL o Servidor Virtual)
 
-Ejecuta estos pasos dentro de tu terminal de Ubuntu.
+Ejecuta estos pasos dentro de la terminal de Ubuntu.
 
-### 2.1 Actualizar el sistema e instalar dependencias esenciales
-OpenCode, los servidores MCP y las herramientas CLI de skills requieren `curl`, `tar`, `git`, `nodejs` y `npm` instalados de forma nativa en Linux (esto evita que WSL intente ejecutar binarios de Windows y falle por permisos de rutas UNC):
+### 2.1 Instalar dependencias esenciales de forma nativa en Linux
+> **Nota importante para WSL:** Windows comparte su variable `PATH` con Ubuntu por defecto. Si no instalas `nodejs` y `npm` de forma nativa en Ubuntu, comandos como `npx` invocarán al `CMD.EXE` de Windows y fallarán con errores de permisos sobre rutas UNC (`\\wsl.localhost\...`).
 
 ```bash
 sudo apt update && sudo apt upgrade -y
 sudo apt install -y curl tar git nodejs npm
+hash -r
 ```
 
-### 2.2 Validar versiones instaladas
-Verifica que todas las herramientas base respondan desde el entorno Linux:
+### 2.2 Validar que los binarios apunten a Linux
+Verifica que las herramientas estén operativas y que `npx` resuelva hacia `/usr/bin/npx` (nunca hacia `/mnt/c/...`):
 
 ```bash
 git --version
 node --version
 npm --version
+which npx
 ```
 
-### 2.3 Inicializar la configuración estándar de Git
-Configura la identidad global y la rama principal por defecto (`main`) para que los agentes puedan realizar *commits* sin errores:
+### 2.3 Configurar identidad global estándar de Git
+Configura la rama principal moderna (`main`) y las credenciales globales para que los agentes puedan realizar *commits* sin interrupciones:
 
 ```bash
-# 1. Configurar rama principal moderna y credenciales globales
 git config --global init.defaultBranch main
 git config --global user.name "wlmora"
 git config --global user.email "wlmora@gmail.com"
 
-# 2. Verificar configuración aplicada
+# Verificar configuración aplicada
 git config --list
 ```
 
@@ -78,59 +79,103 @@ git config --list
 ## Parte 3: Instalación y Validación de OpenCode
 
 ### 3.1 Instalar OpenCode
-Ejecuta el instalador oficial (asegúrate de incluir la ruta `/install` o `/v2/install` según corresponda):
+Ejecuta el instalador oficial (asegúrate de incluir la ruta completa `/install`):
 
 ```bash
 curl -fsSL https://opencode.ai | bash
 ```
 
-*(Nota: El script instala el binario en `~/.opencode/bin` y añade automáticamente la ruta a tu archivo `~/.bashrc` o `~/.zshrc`).*
+*(El script instala el binario en `~/.opencode/bin` y actualiza automáticamente `~/.bashrc` o `~/.zshrc`).*
 
-### 3.2 Recargar entorno y validar versión
-Actualiza las variables de sesión de tu terminal y verifica que el comando responda correctamente:
+### 3.2 Recargar sesión, actualizar y validar
+Actualiza las variables de entorno de tu terminal y verifica la versión instalada:
 
 ```bash
 source ~/.bashrc
 opencode --version
 ```
 
-### 3.3 Actualizar a la última versión disponible
-Al ejecutar `opencode` por primera vez, el cliente verifica y aplica la última versión estable (ej. `v2.3.0` o superior):
-
-```bash
-opencode
-# Sal con Ctrl+C y verifica la versión actualizada:
-opencode --version
-```
-
-*(Opcional para servidores de producción: Si necesitas fijar una versión exacta al aprovisionar, usa `curl -fsSL https://opencode.ai | bash -s -- --version X.Y.Z`).*
+*(Opcional: Al ejecutar `opencode` por primera vez, el cliente verifica y aplica automáticamente la última versión estable).*
 
 ---
 
-## Parte 4: Inicialización de un Nuevo Proyecto AI-SDLC
+## Parte 4: Estructura Base Agnóstica para Cualquier Proyecto
 
-Para cada proyecto nuevo que vayas a desarrollar con agentes, sigue esta estructura estándar dentro del sistema de archivos nativo de Linux (`~/proyectos`):
+Para iniciar cualquier proyecto nuevo bajo metodología **Spec-Driven Development**, crea el directorio dentro del sistema de archivos nativo de Linux (`~/proyectos`) con esta estructura mínima:
 
 ```bash
-# 1. Crear directorio del proyecto e inicializar repositorio
+# 1. Crear directorio del proyecto e inicializar repositorio Git
 mkdir -p ~/proyectos/nombre-del-proyecto
 cd ~/proyectos/nombre-del-proyecto
 git init
 
-# 2. Crear estructura mínima de especificaciones, reglas y skills
+# 2. Crear carpetas estándar de especificaciones, skills y reglas
 mkdir -p docs/specs .opencode/skills
-touch AGENTS.md opencode.json
+touch AGENTS.md opencode.json .gitignore
 
-# 3. Instalar skills oficiales desde el registro (ej. Astro)
-npx skills add withastro/astro --skill astro-developer
-# (En el asistente interactivo, seleccionar: Scope -> Project y Method -> Copy)
-
-# 4. Iniciar el entorno agéntico
-opencode
+# 3. Configurar .gitignore base para evitar subir secretos o dependencias
+cat << 'EOF' > .gitignore
+node_modules/
+dist/
+.astro/
+.env
+.env.*
+!.env.example
+.DS_Store
+EOF
 ```
 
-### Flujo básico de operación dentro de OpenCode
-* **Conectar proveedores externos (Opcional):** OpenCode incluye modelos gratuitos listos para usar. Si deseas añadir una API Key propia (Google AI Studio, OpenRouter, etc.), ejecuta `/connect` dentro de la interfaz.
-* **Modo Planificación (`Tab`):** Úsalo siempre al iniciar una funcionalidad para que el agente analice el contexto, redacte o actualice las especificaciones en `docs/specs/` y proponga un plan sin modificar código.
-* **Modo Construcción (`Tab`):** Úsalo una vez aprobado el plan para que el agente implemente el código y ejecute las pruebas correspondientes.
+### Propósito de cada archivo en la estructura base
+*   **`AGENTS.md` (Constitución del Proyecto):** Define el objetivo del producto, el *stack* tecnológico, las reglas de negocio y el flujo obligatorio de planificar antes de escribir código. OpenCode lo lee en cada sesión.
+*   **`opencode.json` (Servidores MCP):** Conecta a OpenCode con fuentes de documentación viva (ej. MCP oficial de Astro, Supabase o Context7) para evitar código obsoleto.
+*   **`.agents/skills/` y `.opencode/skills/` (Habilidades bajo demanda):** Manuales especializados (`SKILL.md`) que el agente carga solo cuando trabaja en una tarea concreta. Puedes instalar skills oficiales por proyecto ejecutando:
+    ```bash
+    /usr/bin/npx skills add <propietario/repositorio> --skill <nombre-skill>
+    # En el asistente interactivo: Scope -> Project | Method -> Copy
+    ```
+*   **`docs/specs/` (Memoria Evolutiva):** Contiene las especificaciones técnicas incrementales (`01-mvp-arquitectura.md`, `02-modulo-pagos.md`, etc.) redactadas y actualizadas por OpenCode antes de codificar.
 
+---
+
+## Parte 5: Versionamiento y Subida a GitHub
+
+Una vez configurados los cimientos o completada una especificación, respalda el proyecto en GitHub siguiendo estos pasos:
+
+### 5.1 Crear el repositorio remoto en GitHub
+1. Entra a tu cuenta en GitHub y crea un **nuevo repositorio vacío** (sin marcar `README`, `.gitignore` ni licencia, ya que los creaste localmente).
+2. Copia la URL del repositorio (ej. `https://github.com`).
+
+### 5.2 Registrar el primer commit y vincular el remoto
+Desde la raíz de tu proyecto en Ubuntu (`~/proyectos/nombre-del-proyecto`):
+
+```bash
+# 1. Verificar archivos listos para versionar (asegúrate de que .env no aparezca)
+git status
+
+# 2. Preparar todos los archivos y crear el commit inicial
+git add .
+git commit -m "chore: inicializa estructura base Native AI-SDLC, reglas y skills"
+
+# 3. Vincular con el repositorio remoto en GitHub y subir la rama main
+git remote add origin https://github.com
+git branch -M main
+git push -u origin main
+```
+
+### 5.3 Autenticación en GitHub desde Linux/WSL (Si te pide credenciales)
+GitHub no acepta contraseñas tradicionales en terminal. Si `git push` te pide autenticación:
+*   **Opción A (Token PAT):** En GitHub ve a *Settings -> Developer settings -> Personal access tokens -> Tokens (classic)*, genera un token con permiso `repo` y úsalo como contraseña cuando la terminal te la pida.
+*   **Opción B (GitHub CLI — Recomendado para servidores):**
+    ```bash
+    sudo apt install -y gh
+    gh auth login
+    ```
+
+---
+
+## Parte 6: Ciclo de Trabajo Diario en OpenCode
+
+1. **Inicia el agente** dentro de tu proyecto: `opencode`
+2. **Modo Planificación (`Tab`):** Describe el nuevo requisito de negocio y pídele que redacte o actualice la especificación en `docs/specs/`.
+3. **Revisión Humana:** Lee el documento Markdown generado y solicita ajustes si es necesario.
+4. **Modo Construcción (`Tab`):** Aprueba el plan para que el agente implemente el código, ejecute las validaciones (`npm run check`, `npm run build`) y deje los cambios listos para tu siguiente `git commit` y `git push`.
