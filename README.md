@@ -44,26 +44,32 @@ Para evitar que WSL consuma toda la memoria RAM del equipo anfitrión y facilita
 Ejecuta estos pasos dentro de tu terminal de Ubuntu.
 
 ### 2.1 Actualizar el sistema e instalar dependencias esenciales
-OpenCode y los flujos agénticos requieren `curl`, `tar` y `git` para descargar binarios, descomprimir paquetes y gestionar versiones:
+OpenCode, los servidores MCP y las herramientas CLI de skills requieren `curl`, `tar`, `git`, `nodejs` y `npm` instalados de forma nativa en Linux (esto evita que WSL intente ejecutar binarios de Windows y falle por permisos de rutas UNC):
 
 ```bash
 sudo apt update && sudo apt upgrade -y
-sudo apt install -y curl tar git
+sudo apt install -y curl tar git nodejs npm
 ```
 
-### 2.2 Validar e inicializar la configuración estándar de Git
-Verifica que Git esté operativo y configura la identidad global y la rama principal por defecto (`main`) para que los agentes puedan realizar *commits* sin errores:
+### 2.2 Validar versiones instaladas
+Verifica que todas las herramientas base respondan desde el entorno Linux:
 
 ```bash
-# 1. Validar instalación
 git --version
+node --version
+npm --version
+```
 
-# 2. Configurar rama principal moderna y credenciales globales
+### 2.3 Inicializar la configuración estándar de Git
+Configura la identidad global y la rama principal por defecto (`main`) para que los agentes puedan realizar *commits* sin errores:
+
+```bash
+# 1. Configurar rama principal moderna y credenciales globales
 git config --global init.defaultBranch main
 git config --global user.name "wlmora"
 git config --global user.email "wlmora@gmail.com"
 
-# 3. Verificar configuración aplicada
+# 2. Verificar configuración aplicada
 git config --list
 ```
 
@@ -72,7 +78,7 @@ git config --list
 ## Parte 3: Instalación y Validación de OpenCode
 
 ### 3.1 Instalar OpenCode
-Descarga y ejecuta el instalador oficial (asegúrate de incluir la ruta completa `/install`):
+Ejecuta el instalador oficial (asegúrate de incluir la ruta `/install` o `/v2/install` según corresponda):
 
 ```bash
 curl -fsSL https://opencode.ai | bash
@@ -89,7 +95,7 @@ opencode --version
 ```
 
 ### 3.3 Actualizar a la última versión disponible
-Al ejecutar `opencode` por primera vez (o mediante su comando de actualización), el cliente verifica y aplica la última versión estable (ej. `v2.3.0` o superior):
+Al ejecutar `opencode` por primera vez, el cliente verifica y aplica la última versión estable (ej. `v2.3.0` o superior):
 
 ```bash
 opencode
@@ -111,14 +117,20 @@ mkdir -p ~/proyectos/nombre-del-proyecto
 cd ~/proyectos/nombre-del-proyecto
 git init
 
-# 2. Crear archivo base de reglas y arquitectura para los agentes
-touch AGENTS.md
+# 2. Crear estructura mínima de especificaciones, reglas y skills
+mkdir -p docs/specs .opencode/skills
+touch AGENTS.md opencode.json
 
-# 3. Iniciar el entorno agéntico
+# 3. Instalar skills oficiales desde el registro (ej. Astro)
+npx skills add withastro/astro --skill astro-developer
+# (En el asistente interactivo, seleccionar: Scope -> Project y Method -> Copy)
+
+# 4. Iniciar el entorno agéntico
 opencode
 ```
 
 ### Flujo básico de operación dentro de OpenCode
 * **Conectar proveedores externos (Opcional):** OpenCode incluye modelos gratuitos listos para usar. Si deseas añadir una API Key propia (Google AI Studio, OpenRouter, etc.), ejecuta `/connect` dentro de la interfaz.
-* **Modo Planificación (`Tab`):** Úsalo siempre al iniciar una funcionalidad para que el agente analice el contexto, redacte especificaciones en `AGENTS.md` y proponga un plan sin modificar código.
+* **Modo Planificación (`Tab`):** Úsalo siempre al iniciar una funcionalidad para que el agente analice el contexto, redacte o actualice las especificaciones en `docs/specs/` y proponga un plan sin modificar código.
 * **Modo Construcción (`Tab`):** Úsalo una vez aprobado el plan para que el agente implemente el código y ejecute las pruebas correspondientes.
+
