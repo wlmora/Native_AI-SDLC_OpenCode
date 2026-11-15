@@ -1,6 +1,6 @@
 # Guía de Aprovisionamiento y Arranque: Ecosistema Native AI-SDLC
 
-Esta guía estandariza el aprovisionamiento desde cero de un entorno de desarrollo agéntico basado en **Ubuntu** (ya sea sobre **WSL 2 en Windows** o directamente en un **Servidor Virtual / VPS** en la nube) y define una estructura base agnóstica para iniciar cualquier proyecto de software.
+Esta guía estandariza la preparación desde cero de un entorno de desarrollo agéntico basado en **Ubuntu** (ya sea sobre **WSL 2 en Windows** o directamente en un **Servidor Virtual / VPS** en la nube) y define una estructura base agnóstica para cualquier proyecto de software.
 
 ---
 
@@ -41,14 +41,14 @@ Para evitar que WSL consuma toda la memoria del equipo anfitrión y facilitar la
 
 ## Parte 2: Aprovisionamiento Base en Ubuntu (WSL o Servidor Virtual)
 
-Ejecuta estos pasos dentro de la terminal de Ubuntu.
+Ejecuta estos pasos dentro de tu terminal de Ubuntu.
 
-### 2.1 Instalar dependencias esenciales de forma nativa en Linux
-> **Nota importante para WSL:** Windows comparte su variable `PATH` con Ubuntu por defecto. Si no instalas `nodejs` y `npm` de forma nativa en Ubuntu, comandos como `npx` invocarán al `CMD.EXE` de Windows y fallarán con errores de permisos sobre rutas UNC (`\\wsl.localhost\...`).
+### 2.1 Instalar dependencias esenciales y GitHub CLI de forma nativa en Linux
+> **Nota importante para WSL:** Windows comparte su variable `PATH` con Ubuntu por defecto. Instalar `nodejs` y `npm` de forma nativa en Ubuntu (y refrescar con `hash -r`) evita que comandos como `npx` invoquen al `CMD.EXE` de Windows y fallen con errores de permisos sobre rutas UNC (`\\wsl.localhost\...`).
 
 ```bash
 sudo apt update && sudo apt upgrade -y
-sudo apt install -y curl tar git nodejs npm
+sudo apt install -y curl tar git nodejs npm gh
 hash -r
 ```
 
@@ -59,6 +59,7 @@ Verifica que las herramientas estén operativas y que `npx` resuelva hacia `/usr
 git --version
 node --version
 npm --version
+gh --version
 which npx
 ```
 
@@ -74,6 +75,14 @@ git config --global user.email "wlmora@gmail.com"
 git config --list
 ```
 
+### 2.4 Autenticar el entorno con GitHub (Una sola vez por equipo/servidor)
+GitHub no permite contraseñas tradicionales en terminal. Autentica Git de forma segura mediante navegador o token usando GitHub CLI:
+
+```bash
+gh auth login
+# Seleccionar: GitHub.com -> HTTPS -> Yes (autenticar Git) -> Login with a web browser
+```
+
 ---
 
 ## Parte 3: Instalación y Validación de OpenCode
@@ -82,7 +91,7 @@ git config --list
 Ejecuta el instalador oficial (asegúrate de incluir la ruta completa `/install`):
 
 ```bash
-curl -fsSL https://opencode.ai/install | bash
+curl -fsSL https://opencode.ai | bash
 ```
 
 *(El script instala el binario en `~/.opencode/bin` y actualiza automáticamente `~/.bashrc` o `~/.zshrc`).*
@@ -141,35 +150,25 @@ EOF
 
 Una vez configurados los cimientos o completada una especificación, respalda el proyecto en GitHub siguiendo estos pasos:
 
-### 5.1 Crear el repositorio remoto en GitHub
-1. Entra a tu cuenta en GitHub y crea un **nuevo repositorio vacío** (sin marcar `README`, `.gitignore` ni licencia, ya que los creaste localmente).
-2. Copia la URL del repositorio (ej. `https://github.com`).
+### 5.1 Crear el repositorio remoto (Desde terminal con `gh` o en la web)
+```bash
+# Opción rápida: Crear el repositorio en GitHub y vincularlo automáticamente
+gh repo create nombre-del-proyecto --private --source=. --remote=origin
+```
+*(Si lo creaste manualmente en la web como repositorio vacío, vincúlalo con `git remote add origin https://github.com`. Si necesitas corregir una URL mal escrita, usa `git remote set-url origin <nueva-url>`).*
 
-### 5.2 Registrar el primer commit y vincular el remoto
-Desde la raíz de tu proyecto en Ubuntu (`~/proyectos/nombre-del-proyecto`):
-
+### 5.2 Registrar el commit y subir cambios
 ```bash
 # 1. Verificar archivos listos para versionar (asegúrate de que .env no aparezca)
 git status
 
-# 2. Preparar todos los archivos y crear el commit inicial
+# 2. Preparar archivos y crear el commit
 git add .
 git commit -m "chore: inicializa estructura base Native AI-SDLC, reglas y skills"
 
-# 3. Vincular con el repositorio remoto en GitHub y subir la rama main
-git remote add origin https://github.com
-git branch -M main
+# 3. Subir la rama main al repositorio remoto
 git push -u origin main
 ```
-
-### 5.3 Autenticación en GitHub desde Linux/WSL (Si te pide credenciales)
-GitHub no acepta contraseñas tradicionales en terminal. Si `git push` te pide autenticación:
-*   **Opción A (Token PAT):** En GitHub ve a *Settings -> Developer settings -> Personal access tokens -> Tokens (classic)*, genera un token con permiso `repo` y úsalo como contraseña cuando la terminal te la pida.
-*   **Opción B (GitHub CLI — Recomendado para servidores):**
-    ```bash
-    sudo apt install -y gh
-    gh auth login
-    ```
 
 ---
 
